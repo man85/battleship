@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+  <head>
+      <meta charset="utf-8">
+      <title>Game BtlShip</title>
+      <link rel="stylesheet" href="styles.css">
+  </head>
+<body>
+  <span><table id="table"></table></span><table id="oppField"></table>
+  <span></span><table id="ship1cell"></table>
+  <span></span><table id="ship2cell"></table>
+  <span></span><table id="ship3cell"></table>
+  <span></span><table id="ship4cell"></table>
+
+  <script>
+     colCount=10;
+     rowCount=10;
+     let templShips=new Map();
+     let ships=[];
+     let ship=null;
+     let tblAr=[];
+     let oppTblAr=[];
+     let state='placeShips';
+     //-----------main table----------------
+     for (let i = 0; i < rowCount; i++) { 
+        let tr=document.createElement('tr');
+        table.appendChild(tr);
+        tblAr.push([]);
+        for (let j=0;j<colCount;j++){
+          
+          let cell1=document.createElement('td');
+          cell1.className="empty";
+          tblAr[i].push({ship:new Set(),cell:cell1});
+          
+          tr.appendChild(cell1);
+        }
+     }
+     function templShipClick(event){
+        let tbl=event.target.closest('table');
+        if (!tbl) return;
+        if (templShips.get(tbl.id).count==0) return;
+        ship={
+          x: undefined,
+          y: undefined,
+          length:templShips.get(tbl.id).length,
+          xOr:1,
+          yOr:0,
+          cells:[],
+          canPlaced:undefined,
+          tmplShipId: tbl.id,
+        }
+        
+     }
+     //---------create opponent table field---------
+     function createOppField(){
+       for (let i = 0; i < rowCount; i++) { 
+          let tr=document.createElement('tr');
+          oppField.appendChild(tr);
+          oppTblAr.push([]);
+          for (let j=0;j<colCount;j++){
+          
+            let cell1=document.createElement('td');
+            cell1.className="empty";
+            oppTblAr[i].push(cell1);
+          
+            tr.appendChild(cell1);
+          }
+       }
+     }
+     //---------ships tables----------------
+     function createShipTable(length,id,count){
+       templShips.set(id,{'length':length, 'count':count});
+       let tr=document.createElement('tr');
+       let ship1cell=document.getElementById(id);
+       ship1cell.onclick=templShipClick;
+       ship1cell.appendChild(tr);
+       for (let j=0;j<length;j++){          
+          let cell1=document.createElement('td');
+          cell1.className="canPlaced";
+              
+          tr.appendChild(cell1);
+       }
+       ship1cell.previousSibling.textContent=count;
+     }
+     createShipTable(1,'ship1cell',1) ;
+     createShipTable(2,'ship2cell',1) ;
+     createShipTable(3,'ship3cell',1) ;
+     createShipTable(4,'ship4cell',1) ;
+
+     table.onmouseover=function(event){
+        if (!ship) return;
+        let td=event.target.closest('td');
+        if (!td) return;
+        
+        let tr=td.parentNode;
+        placeShipOnTable(tblAr,tr,td,ship);
+     }
+
+     function placeShipOnTable(tblAr,tr,td,ship){
+         let canPlaced=(td.cellIndex+ship.xOr*ship.length<=tblAr[0].length)&&(tr.rowIndex+ship.yOr*ship.length<=tblAr.length);
+         //-------check ships around new place---------------------
+         let i;
+         let j;
+         if (canPlaced){
+           let startI=i=Math.max(0,td.cellIndex-1);
+           let startJ=j=Math.max(0,tr.rowIndex-1);
+           while ((i<=td.cellIndex+1)&&(j<=tr.rowIndex+1)){
+             while ((i<Math.min(tblAr[0].length,td.cellIndex+ship.length+1))&&(j<Math.min(tblAr.length,tr.rowIndex+ship.length+1))&& canPlaced){
+                if (canPlaced){ canPlaced=(tblAr[j][i].ship.size==0);}
+                i=i+ship.xOr;
+                j=j+ship.yOr;
+             }
+             startI=startI+ship.yOr; 
+             startJ=startJ+ship.xOr;
+             i=startI;
+             j=startJ;
+           }
+         }
+         i=td.cellIndex;
+         j=tr.rowIndex;
+         while ((i<Math.min(tblAr[0].length,td.cellIndex+ship.length))&&(j<Math.min(tblAr.length,tr.rowIndex+ship.length))){
+            //if (canPlaced){ canPlaced=(tblAr[j][i].ship.size==0);}
+            tblAr[j][i].ship.add(ship);
+            ship.cells.push(tblAr[j][i].cell);   
+            i=i+ship.xOr;
+            j=j+ship.yOr;
+         }
+         ship.canPlaced=canPlaced;
+         //---------Add class to cells-------------------------------  
+         for (cell of ship.cells){
+             if (canPlaced){ 
+                   cell.classList.add("canPlaced");
+             } else{
+                      cell.classList.add("cantPlaced");                      
+                   }
+         }
+     }
+     table.onmouseout=function(event){
+        if (!ship) return;
+        let td=event.target.closest('td');
+        if (!td) return;
+        for (let cell of ship.cells){
+           tblAr[cell.parentNode.rowIndex][cell.cellIndex].ship.delete(ship);
+           if (tblAr[cell.parentNode.rowIndex][cell.cellIndex].ship.size==0){
+             cell.classList.remove("canPlaced");
+             
+           }
+           cell.classList.remove("cantPlaced");
+        }
+        ship.cells=[];
+     }
+     table.onclick=function(event){
+        if (!ship) return;
+        if (ship.canPlaced!=true) return;
+        let td=event.target.closest('td');
+        if (!td) return;
+        ships.push(ship);
+        let count=--(templShips.get(ship.tmplShipId).count);
+        let tbl=document.getElementById(ship.tmplShipId);
+        if (count!=0){
+           tbl.previousSibling.textContent=count;
+        } else {
+               tbl.style.display = "none";
+               tbl.previousSibling.style.display = "none";
+               //---calc total number of unplaced ships---
+               let countShips=0;
+               for (tmpl of templShips.values()){
+                  countShips+=tmpl.count;
+               }
+               if (countShips==0){
+                  state='readyToStartGame';
+                  createOppField();
+               }
+           }
+        ship=null;
+     }
+     document.onkeypress=function(event){
+        event.preventDefault();
+        if (event.code=='KeyR') {
+            let targetEvent=null;
+            //-------mouseout-----------
+            if (ship.cells){
+              if (ship.cells[0]==undefined) return;
+              targetEvent=ship.cells[0];
+              let event = new MouseEvent("mouseout", {
+                bubbles: true,
+                cancelable: true,
+                target: ship.cells[0]
+              });
+              ship.cells[0].dispatchEvent(event);
+            }
+            if (ship.xOr==1){
+               ship.xOr=0;
+               ship.yOr=1;
+            }else{
+                    ship.xOr=1;
+                    ship.yOr=0;
+                 }
+            //-------mouseover------------
+            if (targetEvent){
+              let event = new MouseEvent("mouseover", {
+                bubbles: true,
+                cancelable: true,
+                target: targetEvent
+              });
+              targetEvent.dispatchEvent(event);
+            }
+        }
+     }
+  </script>
+</body>
+</html>
+

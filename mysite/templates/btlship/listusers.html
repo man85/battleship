@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>List of users</title>
+    <link rel="stylesheet" href="{% static  'mysite/styles.css'%}">
+  </head>
+<body>
+   <div>You loged in as {{curUser}}</div>
+   <div id="body_div">
+   <p>List of players</p>
+   <div id="users">
+       {%for u in listusers %}
+       <div>
+           <input type="checkbox" data-val={{u.user}}>{{u.user}}</input>
+       </div>
+       {%endfor%}
+   </div>
+   <button onclick="sendRequest()">Game request to users</button>
+   <p>List of incoming requests to game from users</p>
+   <div id="incomUsers">      
+   </div>
+   <button onclick="AnswerOnRequest()">Answer on request</button>
+   </div>
+   <script type="module">
+      let ws;
+      window.sender='{{curUser}}';
+      window.onload=function(){
+        let s='ws://'+window.location.host+'/ws/';
+        ws=new WebSocket(s);
+        ws.onmessage=wsOnMessage;
+        window.ws=ws;
+      }
+      
+      window.onbeforeunload = function(){
+        alert("websockket close")
+        ws.close();
+      }
+      
+      function wsOnMessage(event){
+         let msg=JSON.parse(event.data);
+         let user;
+         switch(msg.requestType){
+            case  "incoming":
+               user=msg.sender;
+               if (!incomUsers.querySelector('input[value='+user+']')){
+                  incomUsers.innerHTML+="<div><input type=\"radio\" name=\"inUsers\" value="+user+">"+user+"</input> </div>";
+               }
+               break;
+            case  "newuser":
+               user=msg.user
+               if ((!users.querySelector('input[data-val='+user+']')) && (user!="{{curUser}}")){
+                  users.innerHTML+="<div><input type=\"checkbox\" data-val="+user+">"+user+"</div>";
+               }
+               break;
+            case "startGame":
+               body_div.innerHTML = msg.newBody;
+               let script= document.createElement('script');
+               script.type="module";
+               script.src="{% static 'mysite/btlship.js'%}";
+               script.async=false;
+               document.body.append(script);
+               break;
+         }
+      }
+      
+      function AnswerOnRequest(){
+         if (!incomUsers.querySelector('input[name="inUsers"]:checked')) return;
+         let selectedUser=incomUsers.querySelector('input[name="inUsers"]:checked').value;
+         let jsonObj={
+            requestType:'confirming',
+            receiver: selectedUser,
+            sender:'{{curUser}}'
+         }
+         ws.send(JSON.stringify(jsonObj));
+      }
+      window.sendRequest=sendRequest;
+      window.AnswerOnRequest=AnswerOnRequest;
+      function sendRequest(){
+         let usrs=users.getElementsByTagName('input');
+         let jsonObj={
+            requestType:'outgoing',
+            users:[],
+            sender:'{{curUser}}'
+         }
+         for (let user of usrs){
+            
+            if (user.checked) {
+               jsonObj.users.push(user.dataset.val);
+               user.setAttribute('checked','False');
+            }
+        
+         }
+         if (jsonObj.users.length > 0){
+            ws.send(JSON.stringify(jsonObj));
+         }
+      }
+   </script>
+</body>
+</html>
