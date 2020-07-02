@@ -1,0 +1,37 @@
+.empty {
+   width: 20px;
+   height: 20px;
+}
+table td
+{
+   border-collapse: collapse;
+   border: 1px solid grey;
+}
+
+span {
+   float: left;
+}
+.canPlaced {
+   background-color:green;
+   width: 20px;
+   height: 20px;
+}
+.cantPlaced {
+   background-color:red;
+}
+#oppField {
+   float: right;
+}
+.wounded {
+  background-color:brown;
+  
+}
+
+.shipSank {
+  background-color:black;
+  
+}
+.shotPast {
+  background-color:yellow;
+  
+}
