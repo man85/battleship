@@ -1,0 +1,17 @@
+  <div id="msg"></div>
+  <div>
+  <table id="table"></table><table id="oppField" display="inline"></table>
+  </div>
+  <div>
+    <span></span><table id="ship1cell"></table>
+    <span></span><table id="ship2cell"></table>
+    <span></span><table id="ship3cell"></table>
+    <span></span><table id="ship4cell"></table>
+  </div>
+  <div>
+  For rotate ship press "R"
+  <table><td class="canPlaced"></td></table><div display="inline"> - alive cell of ship</div>
+  <table><td class="empty wounded"></td></table> - wonded cell of ship
+  <table><td class="empty shipSank"></td></table> -  ship sank
+
+  </div>
